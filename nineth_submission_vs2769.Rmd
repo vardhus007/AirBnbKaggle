@@ -223,33 +223,3 @@ colnames(predicted_values)=c('id','price')
 ```{r}
 write.csv(x = predicted_values, file = "Model 31 Predictions.csv", row.names = FALSE)
 ```
-
-
-```{r}
-keeps1 <- c("accommodates","cleaning_fee","longitude","review_scores_location","bathrooms","latitude","bedrooms","security_deposit","availability_30","calculated_host_listings_count","review_scores_value","review_scores_rating","number_of_reviews","guests_included","review_scores_cleanliness","beds","review_scores_checkin","minimum_nights","host_listings_count","extra_people","availability_90","availability_365")
-
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
-
-
-```{r}
-```
