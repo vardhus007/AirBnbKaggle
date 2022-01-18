@@ -1,0 +1,255 @@
+---
+title: "nine_submission_vs2769"
+author: "Varadharajan Suresh"
+date: "09/04/2021"
+output: html_document
+---
+```{r}
+library(tidyr)
+library(knitr)
+library(readr)
+library(dplyr)
+library(data.table)
+library(caret)
+library(caTools)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(xgboost)
+library(vtreat)
+```
+
+```{r}
+setwd('C:/Users/Varadharajan Suresh/Desktop/APAN Frameworks and Methods 1/Kaggle Competition')
+```
+
+```{r}
+train <- read.csv('train/train.csv')
+```
+
+```{r}
+#numbers <- train[c(27,33,44,49,50,54,55,56,57,64,65,66,67,68,69,72,73,74,75,77,80:86,95,61)]
+numbers <- train[c(27,33,49,50,54,55,56,57,64,65,66,67,68,69,72,73,74,75,77,80:86,95,44,29,36,37,41,51,52,53,58,90,91,92,93,94,61)]
+```
+
+```{r}
+ncol(numbers)
+```
+
+```{r}
+str(numbers)
+```
+```{r}
+write.csv(x = numbers, file = "numbers.csv", row.names = FALSE)
+```
+
+```{r}
+numbers$host_response_rate[is.na(numbers$host_response_rate)] <- mean(numbers$host_response_rate,na.rm=TRUE)
+numbers$host_listings_count[is.na(numbers$host_listings_count)] <- mean(numbers$host_listings_count,na.rm=TRUE)
+numbers$latitude[is.na(numbers$latitude)] <- mean(numbers$latitude,na.rm=TRUE)
+numbers$longitude[is.na(numbers$longitude)] <- mean(numbers$longitude,na.rm=TRUE)
+numbers$accommodates[is.na(numbers$accommodates)] <- mean(numbers$accommodates,na.rm=TRUE)
+numbers$bathrooms[is.na(numbers$bathrooms)] <- mean(numbers$bathrooms,na.rm=TRUE)
+numbers$bedrooms[is.na(numbers$bedrooms)] <- mean(numbers$bedrooms,na.rm=TRUE)
+numbers$beds[is.na(numbers$beds)] <- mean(numbers$beds,na.rm=TRUE)
+numbers$security_deposit[is.na(numbers$security_deposit)] <- mean(numbers$security_deposit,na.rm=TRUE)
+numbers$cleaning_fee[is.na(numbers$cleaning_fee)] <- mean(numbers$cleaning_fee,na.rm=TRUE)
+numbers$guests_included[is.na(numbers$guests_included)] <- mean(numbers$guests_included,na.rm=TRUE)
+numbers$extra_people[is.na(numbers$extra_people)] <- mean(numbers$extra_people,na.rm=TRUE)
+numbers$minimum_nights[is.na(numbers$minimum_nights)] <- mean(numbers$minimum_nights,na.rm=TRUE)
+numbers$maximum_nights[is.na(numbers$maximum_nights)] <- mean(numbers$maximum_nights,na.rm=TRUE)
+numbers$availability_30[is.na(numbers$availability_30)] <- mean(numbers$availability_30,na.rm=TRUE)
+numbers$availability_60[is.na(numbers$availability_60)] <- mean(numbers$availability_60,na.rm=TRUE)
+numbers$availability_90[is.na(numbers$availability_90)] <- mean(numbers$availability_90,na.rm=TRUE)
+numbers$availability_365[is.na(numbers$availability_365)] <- mean(numbers$availability_365,na.rm=TRUE)
+numbers$number_of_reviews[is.na(numbers$number_of_reviews)] <- mean(numbers$number_of_reviews,na.rm=TRUE)
+numbers$review_scores_rating[is.na(numbers$review_scores_rating)] <- mean(numbers$review_scores_rating,na.rm=TRUE)
+numbers$review_scores_accuracy[is.na(numbers$review_scores_accuracy)] <- mean(numbers$review_scores_accuracy,na.rm=TRUE)
+numbers$review_scores_cleanliness[is.na(numbers$review_scores_cleanliness)] <- mean(numbers$review_scores_cleanliness,na.rm=TRUE)
+numbers$review_scores_checkin[is.na(numbers$review_scores_checkin)] <- mean(numbers$review_scores_checkin,na.rm=TRUE)
+numbers$review_scores_communication[is.na(numbers$review_scores_communication)] <- mean(numbers$review_scores_communication,na.rm=TRUE)
+numbers$review_scores_location[is.na(numbers$review_scores_location)] <- mean(numbers$review_scores_location,na.rm=TRUE)
+numbers$review_scores_value[is.na(numbers$review_scores_value)] <- mean(numbers$review_scores_value,na.rm=TRUE)
+numbers$calculated_host_listings_count[is.na(numbers$calculated_host_listings_count)] <- mean(numbers$calculated_host_listings_count,na.rm=TRUE)
+```
+
+```{r}
+numbers$zipcode = as.numeric(as.character(numbers$zipcode))
+numbers$zipcode[is.na(numbers$zipcode)] <- mean(numbers$zipcode,na.rm=TRUE)
+```
+
+```{r}
+start_mod = lm(price~1,data=numbers)
+empty_mod = lm(price~1,data=numbers)
+full_mod = lm(price~.,data=numbers)
+hybridStepwise = step(start_mod,scope=list(upper=full_mod,lower=empty_mod),direction='both')
+```
+
+
+```{r}
+summary(hybridStepwise)
+```
+
+
+```{r}
+keeps <- c("price","accommodates","cleaning_fee","neighbourhood_group_cleansed","room_type","bathrooms","longitude","bedrooms","availability_30","review_scores_location","latitude","security_deposit","number_of_reviews","minimum_nights","review_scores_rating","review_scores_value","guests_included","host_identity_verified","review_scores_checkin","beds","availability_365","review_scores_cleanliness","cancellation_policy","extra_people","host_is_superhost","review_scores_communication","calculated_host_listings_count","host_listings_count","availability_90")
+train1 = numbers[keeps]
+```
+
+```{r}
+ncol(train1)
+```
+
+```{r}
+trt = designTreatmentsZ(dframe = train1,varlist = names(train1)[2:29])
+```
+
+```{r}
+newvars = trt$scoreFrame[trt$scoreFrame$code%in% c('clean','lev'),'varName']
+```
+
+
+```{r}
+#model=randomForest(price~.,data=train1,ntree=1000)
+```
+
+```{r}
+train_input = prepare(treatmentplan = trt, 
+                      dframe = train1,
+                      varRestriction = newvars)
+```
+
+
+```{r}
+test <- read.csv('test/test.csv')
+```
+
+
+```{r}
+keeps <- c("accommodates","cleaning_fee","neighbourhood_group_cleansed","room_type","bathrooms","longitude","bedrooms","availability_30","review_scores_location","latitude","security_deposit","number_of_reviews","minimum_nights","review_scores_rating","review_scores_value","guests_included","host_identity_verified","review_scores_checkin","beds","availability_365","review_scores_cleanliness","cancellation_policy","extra_people","host_is_superhost","review_scores_communication","calculated_host_listings_count","host_listings_count","availability_90")
+tst = test[keeps]
+```
+
+```{r}
+tst$accommodates[is.na(tst$accommodates)] <- mean(tst$accommodates,na.rm=TRUE)
+tst$cleaning_fee[is.na(tst$cleaning_fee)] <- mean(tst$cleaning_fee,na.rm=TRUE)
+tst$bedrooms[is.na(tst$bedrooms)] <- mean(tst$bedrooms,na.rm=TRUE)
+tst$bathrooms[is.na(tst$bathrooms)] <- mean(tst$bathrooms,na.rm=TRUE)
+tst$availability_30[is.na(tst$availability_30)] <- mean(tst$availability_30,na.rm=TRUE)
+tst$review_scores_rating[is.na(tst$review_scores_rating)] <- mean(tst$review_scores_rating,na.rm=TRUE)
+tst$number_of_reviews[is.na(tst$number_of_reviews)] <- mean(tst$number_of_reviews,na.rm=TRUE)
+tst$security_deposit[is.na(tst$security_deposit)] <- mean(tst$security_deposit,na.rm=TRUE)
+tst$minimum_nights[is.na(tst$minimum_nights)] <- mean(tst$minimum_nights,na.rm=TRUE)
+tst$review_scores_value[is.na(tst$review_scores_value)] <- mean(tst$review_scores_value,na.rm=TRUE)
+tst$guests_included[is.na(tst$guests_included)] <- mean(tst$guests_included,na.rm=TRUE)
+tst$availability_365[is.na(tst$availability_365)] <- mean(tst$availability_365,na.rm=TRUE)
+tst$calculated_host_listings_count[is.na(tst$calculated_host_listings_count)] <- mean(tst$calculated_host_listings_count,na.rm=TRUE)
+tst$review_scores_cleanliness[is.na(tst$review_scores_cleanliness)] <- mean(tst$review_scores_cleanliness,na.rm=TRUE)
+tst$availability_90[is.na(tst$availability_90)] <- mean(tst$availability_90,na.rm=TRUE)
+tst$beds[is.na(tst$beds)] <- mean(tst$beds,na.rm=TRUE)
+tst$review_scores_communication[is.na(tst$review_scores_communication)] <- mean(tst$review_scores_communication,na.rm=TRUE)
+tst$review_scores_checkin[is.na(tst$review_scores_checkin)] <- mean(tst$review_scores_checkin,na.rm=TRUE)
+```
+
+```{r}
+tst$zipcode = as.numeric(as.character(tst$zipcode))
+tst$zipcode[is.na(tst$zipcode)] <- mean(tst$zipcode,na.rm=TRUE)
+```
+```{r}
+test_input = prepare(treatmentplan = trt, 
+                     dframe = tst,
+                     varRestriction = newvars)
+```
+
+```{r}
+set.seed(617)
+tune_nrounds = xgb.cv(data=as.matrix(train_input), 
+                      label = train1$price,
+                      booster = "gbtree",
+                      nrounds=250,
+                      nfold = 5,
+                      verbose = 0)
+```
+```{r}
+ggplot(data=tune_nrounds$evaluation_log, aes(x=iter, y=test_rmse_mean))+
+  geom_point(size=0.4, color='sienna')+
+  geom_line(size=0.1, alpha=0.1)+
+  theme_bw()
+```
+```{r}
+which.min(tune_nrounds$evaluation_log$test_rmse_mean)
+```
+
+```{r}
+xgboost2= xgboost(data=as.matrix(train_input), 
+                  label = train1$price,
+                  nrounds=35,
+                  verbose = 0)
+```
+
+```{r}
+pred = predict(xgboost2, 
+               newdata=as.matrix(train_input))
+```
+
+```{r}
+rmse_xgboost = sqrt(mean((pred - train1$price)^2)); rmse_xgboost
+
+```
+
+```{r}
+sse = sum((pred - train1$price )^2)
+sst = sum((mean(train1$price)-train1$price)^2)
+r2 = 1 - sse/sst; r2
+```
+
+
+```{r}
+pred1 = predict(xgboost2, 
+               newdata=as.matrix(test_input))
+```
+
+```{r}
+pred1
+```
+
+
+```{r}
+predicted_values=data.frame(test$id ,pred1)
+colnames(predicted_values)=c('id','price')
+```
+
+
+```{r}
+write.csv(x = predicted_values, file = "Model 31 Predictions.csv", row.names = FALSE)
+```
+
+
+```{r}
+keeps1 <- c("accommodates","cleaning_fee","longitude","review_scores_location","bathrooms","latitude","bedrooms","security_deposit","availability_30","calculated_host_listings_count","review_scores_value","review_scores_rating","number_of_reviews","guests_included","review_scores_cleanliness","beds","review_scores_checkin","minimum_nights","host_listings_count","extra_people","availability_90","availability_365")
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
